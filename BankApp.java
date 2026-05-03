@@ -2,6 +2,7 @@ package Java;
 import java.util.*;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.File;
 
 public class BankApp {
 
@@ -13,6 +14,7 @@ public class BankApp {
         System.out.println("Want to Search your account : (Search)");
         System.out.println("Want to Set Password : (set Password)");
         System.out.println("Check Bank Balance : (check balance)");
+        System.out.println("Want to Delete your account : (delete)");
 
         System.out.print("Type : ");
         String userInput = input.nextLine();
@@ -36,6 +38,12 @@ public class BankApp {
             String str = input.nextLine();
 
             user.checkBalance(user, input, str);
+        }
+        else if(userInput.equalsIgnoreCase("delete")) {
+            System.out.print("Enter Account Number: ");
+            String accNo = input.nextLine();
+
+            user.deleteAccount(accNo);
         }
 
     }
@@ -206,6 +214,45 @@ class Bank {
 
         } catch (Exception e) {
             System.out.println("Error set Password");
+            System.out.println(e);
+        }
+    }
+
+    // Delete account
+    protected void deleteAccount(String accNo){
+        try {
+            File file = new File("users.txt");
+            Scanner reader = new Scanner(file);
+
+            StringBuilder newData = new StringBuilder();
+            boolean found = false;
+
+            while(reader.hasNextLine()) {
+                String line = reader.nextLine();
+                String[] data = line.split(",");
+
+                if(accNo.equals(data[1])) {
+                    found = true;
+                    continue; // ❌ skip this line (delete)
+                }
+
+                newData.append(line).append("\n");
+            }
+
+            reader.close();
+
+            if(found) {
+                FileWriter writer = new FileWriter(file);
+                writer.write(newData.toString());
+                writer.close();
+
+                System.out.println("Account deleted successfully!");
+            } else {
+                System.out.println("Account not found");
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error deleting account");
             System.out.println(e);
         }
     }
