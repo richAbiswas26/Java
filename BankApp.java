@@ -1,259 +1,194 @@
 package Java;
+
 import java.util.*;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.File;
+import java.io.*;
+import java.util.*;
 
 public class BankApp {
 
-    public static void main (String [] args){
+    public static void main(String[] args) {
+
         Scanner input = new Scanner(System.in);
+        BankService service = new BankService();
 
-        System.out.println("Choose what you want : (type what you want from below instruction)");
-        System.out.println("Want to make account : (Account)");
-        System.out.println("Want to Search your account : (Search)");
-        System.out.println("Want to Set Password : (set Password)");
-        System.out.println("Check Bank Balance : (check balance)");
-        System.out.println("Want to Delete your account : (delete)");
+        while (true) {
+            System.out.println("\n1. Create Account");
+            System.out.println("2. Search Account");
+            System.out.println("3. Check Balance");
+            System.out.println("4. Delete Account");
+            System.out.println("5. Exit");
 
-        System.out.print("Type : ");
-        String userInput = input.nextLine();
+            System.out.print("Choose 1 to 5 : ");
+            int choice = Integer.parseInt(input.nextLine());
 
-        Bank user = new Bank();
-
-        if(userInput.equalsIgnoreCase("Account")){
-            user.createAccount(user, input);
+            switch (choice) {
+                case 1 -> service.createAccount(input);
+                case 2 -> service.searchAccount(input);
+                case 3 -> service.checkBalance(input);
+                case 4 -> service.deleteAccount(input);
+                case 5 -> {
+                    System.out.println("Thank you!");
+                    return;
+                }
+                default -> System.out.println("Invalid choice");
+            }
         }
-        else if(userInput.equalsIgnoreCase("Search")) {
-            user.searchAccount(input);
-        }
-        else if(userInput.equalsIgnoreCase("set Password")){
-            System.out.print("Account Number: ");
-            String str = input.nextLine();
-
-            user.resetPassword(user, input, str);
-        }
-        else if(userInput.equalsIgnoreCase("check balance")){
-            System.out.print("Account Number: ");
-            String str = input.nextLine();
-
-            user.checkBalance(user, input, str);
-        }
-        else if(userInput.equalsIgnoreCase("delete")) {
-            System.out.print("Enter Account Number: ");
-            String accNo = input.nextLine();
-
-            user.deleteAccount(accNo);
-        }
-
     }
+
 }
 
-class Bank {
-    public String userName;
-    private String account_Number;
+
+class BankUser {
+    private String name;
+    private String accountNumber;
     private int balance;
     private String password;
 
-    // Set value
-    protected void setAccountNumber(String account_Number){
-        this.account_Number = account_Number;
-    }
-    protected void setBalance(int balance){
+    public BankUser(String name, String accountNumber, String password, int balance) {
+        this.name = name;
+        this.accountNumber = accountNumber;
+        this.password = password;
         this.balance = balance;
     }
-    protected void setPassword(String password){
-        this.password = password;
+
+    public String getName() { return name; }
+    public String getAccountNumber() { return accountNumber; }
+    public int getBalance() { return balance; }
+    public String getPassword() { return password; }
+
+    public void setPassword(String password) { this.password = password; }
+    public void setBalance(int balance) { this.balance = balance; }
+
+    public String toFileString() {
+        return name + "," + accountNumber + "," + password + "," + balance;
     }
+}
 
-    // Get Value
-    protected String getAccountNumber(){
-        return this.account_Number;
-    }
-    protected int getBalance(){
-        return this.balance;
-    }
-    protected String getPassword(){
-        return this.password;
-    }
 
-    // Create Account
-    protected void createAccount(Bank user, Scanner input){
+class BankService {
 
-        System.out.print("Enter Name: ");
-        user.userName = input.nextLine();
-
-        System.out.print("Enter Account Number: ");
-        user.setAccountNumber(input.nextLine());
-
-        System.out.print("Enter Password: ");
-        user.setPassword(input.nextLine());
-
-        System.out.print("Enter Balance: ");
-        user.setBalance(Integer.parseInt(input.nextLine()));
-        // input.nextLine(); // clear buffer (important)
-
-        // Convert object → string (CSV format)
-        String data = user.userName + "," +
-                    user.getAccountNumber() + "," +
-                    user.getPassword() + "," +
-                    user.getBalance();
-
+    public void createAccount(Scanner input) {
         try {
-            FileWriter fw = new FileWriter("users.txt", true); // append mode
-            fw.write(data + "\n");
-            fw.close();
+            System.out.print("Enter Name: ");
+            String name = input.nextLine();
+
+            System.out.print("Enter Account Number: ");
+            String acc = input.nextLine();
+
+            System.out.print("Enter Password: ");
+            String pass = input.nextLine();
+
+            System.out.print("Enter Balance: ");
+            int bal = Integer.parseInt(input.nextLine());
+
+            BankUser user = new BankUser(name, acc, pass, bal);
+            BankStorage.saveUser(user);
 
             System.out.println("Account Created Successfully!");
 
-        } catch (IOException e) {
-            System.out.println("Error saving data");
-            System.out.println(e);
+        } catch (Exception e) {
+            System.out.println("Error creating account");
         }
     }
 
-    // User Search their account 
-    protected void searchAccount(Scanner input){
-        System.out.print("Type Name / Account Number: ");
-        String str = input.nextLine();
-
+    public void searchAccount(Scanner input) {
         try {
-            Scanner fileReader = new Scanner(new java.io.File("users.txt"));
+            System.out.print("Enter Name or Account No: ");
+            String key = input.nextLine();
 
-            while(fileReader.hasNextLine()) {
-                String line = fileReader.nextLine();
-
-                String[] data = line.split(",");
-
-                if(str.equals(data[0]) || str.equals(data[1])){
-                    System.out.println("----------------------");
+            for (String[] data : BankStorage.readAll()) {
+                if (key.equals(data[0]) || key.equals(data[1])) {
                     System.out.println("Name: " + data[0]);
-                    System.out.println("Account No: " + data[1]);
-                    System.out.println("----------------------");
-
-                    fileReader.close();
+                    System.out.println("Account: " + data[1]);
                     return;
                 }
-
-                // System.out.println("Name: " + data[0]);
-                // System.out.println("Account No: " + data[1]);
-                // System.out.println("Password: " + data[2]);
-                // System.out.println("Balance: " + data[3]);
             }
-            fileReader.close();
-            System.out.println("Sorry No Account Find (Enter Correct and full details. )");
+            System.out.println("Account not found");
 
         } catch (Exception e) {
-            System.out.println("Error reading file");
+            System.out.println("Error searching");
         }
     }
 
-    // User reset their password
-    protected void resetPassword(Bank user, Scanner input, String str){
-
+    public void checkBalance(Scanner input) {
         try {
-            Scanner fileReader = new Scanner(new java.io.File("users.txt"));
+            System.out.print("Account Number: ");
+            String acc = input.nextLine();
 
-            while(fileReader.hasNextLine()) {
-                String line = fileReader.nextLine();
+            System.out.print("Password: ");
+            String pass = input.nextLine();
 
-                String[] data = line.split(",");
-
-                if(str.equals(data[1])){
-                    System.out.print("Type password : ");
-                    String pass = input.nextLine();
-
-                    data[2] = pass;
-
-                    fileReader.close();
-                    System.out.println("Account Password Set Successfully!");
-
+            for (String[] data : BankStorage.readAll()) {
+                if (acc.equals(data[1]) && pass.equals(data[2])) {
+                    System.out.println("Balance: " + data[3]);
                     return;
                 }
-                else{
-                    System.out.println("No account exists of this account number.");
-                }
             }
-            fileReader.close();
+            System.out.println("Invalid credentials");
 
         } catch (Exception e) {
-            System.out.println("Error set Password");
-            System.out.println(e);
+            System.out.println("Error checking balance");
         }
     }
 
-    // Check Balance
-    protected void checkBalance(Bank user, Scanner input, String str){
+    public void deleteAccount(Scanner input) {
         try {
-            Scanner fileReader = new Scanner(new java.io.File("users.txt"));
+            System.out.print("Account Number: ");
+            String acc = input.nextLine();
 
-            while(fileReader.hasNextLine()) {
-                String line = fileReader.nextLine();
-
-                String[] data = line.split(",");
-
-                if(str.equals(data[1])){
-                    System.out.print("Type password : ");
-                    String pass = input.nextLine();
-
-                    if(pass.equals(data[2])){
-                        System.out.println("Bank Balance : " + data[3]);
-                    }
-                    else{
-                        System.out.println("Wrong Password");
-                    }
-                    fileReader.close();
-
-                    return;
-                }
-                else{
-                    System.out.println("No account exists of this account number.");
-                }
-            }
-            fileReader.close();
-
-        } catch (Exception e) {
-            System.out.println("Error set Password");
-            System.out.println(e);
-        }
-    }
-
-    // Delete account
-    protected void deleteAccount(String accNo){
-        try {
-            File file = new File("users.txt");
-            Scanner reader = new Scanner(file);
-
-            StringBuilder newData = new StringBuilder();
+            List<String[]> all = BankStorage.readAll();
+            List<String> updated = new ArrayList<>();
             boolean found = false;
 
-            while(reader.hasNextLine()) {
-                String line = reader.nextLine();
-                String[] data = line.split(",");
-
-                if(accNo.equals(data[1])) {
+            for (String[] data : all) {
+                if (acc.equals(data[1])) {
                     found = true;
-                    continue; // ❌ skip this line (delete)
+                    continue;
                 }
-
-                newData.append(line).append("\n");
+                updated.add(String.join(",", data));
             }
 
-            reader.close();
+            BankStorage.overwrite(updated);
 
-            if(found) {
-                FileWriter writer = new FileWriter(file);
-                writer.write(newData.toString());
-                writer.close();
-
-                System.out.println("Account deleted successfully!");
-            } else {
-                System.out.println("Account not found");
-            }
+            if (found) System.out.println("Deleted successfully");
+            else System.out.println("Account not found");
 
         } catch (Exception e) {
-            System.out.println("Error deleting account");
-            System.out.println(e);
+            System.out.println("Error deleting");
         }
+    }
+    
+}
+
+class BankStorage {
+
+    private static final String FILE_NAME = "users.txt";
+
+    public static void saveUser(BankUser user) throws IOException {
+        FileWriter fw = new FileWriter(FILE_NAME, true);
+        fw.write(user.toFileString() + "\n");
+        fw.close();
+    }
+
+    public static List<String[]> readAll() throws Exception {
+        List<String[]> list = new ArrayList<>();
+        File file = new File(FILE_NAME);
+
+        if (!file.exists()) return list;
+
+        Scanner sc = new Scanner(file);
+        while (sc.hasNextLine()) {
+            list.add(sc.nextLine().split(","));
+        }
+        sc.close();
+        return list;
+    }
+
+    public static void overwrite(List<String> data) throws IOException {
+        FileWriter fw = new FileWriter(FILE_NAME);
+        for (String line : data) {
+            fw.write(line + "\n");
+        }
+        fw.close();
     }
 }
